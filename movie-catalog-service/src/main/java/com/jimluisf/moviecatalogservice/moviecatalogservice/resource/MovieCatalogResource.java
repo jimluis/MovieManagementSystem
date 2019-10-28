@@ -34,13 +34,13 @@ public class MovieCatalogResource
 		{
 			List<CatalogItem> catalogItemList = new ArrayList<CatalogItem>();
 
-			UserRating userRating = restTemplate.getForObject("http://localhost:8083/ratingdata/users/"+userId, UserRating.class);
+			UserRating userRating = restTemplate.getForObject("http://ratings-data-service/ratingdata/users/"+userId, UserRating.class);
 			
 			
 			for (Rating rating2 : userRating.getUserRating()) 
 			{
 				//for each movieId call movie into service and get details
-				Movie movie = restTemplate.getForObject("http://localhost:8082/movies/"+rating2.getMovieId(), Movie.class);
+				Movie movie = restTemplate.getForObject("http://movie-info-service/movies/"+rating2.getMovieId(), Movie.class);
 				
 				//put them all together
 				catalogItemList.add(new CatalogItem(movie.getName(), "Desc", rating2.getRating()));
