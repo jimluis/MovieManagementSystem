@@ -7,7 +7,6 @@ public class Movie
 	
 	
 	public Movie() {
-		super();
 	}
 
 	public Movie(String movieId, String name) {

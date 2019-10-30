@@ -5,7 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.assertj.core.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,38 +19,147 @@ import com.jimluisf.moviecatalogservice.moviecatalogservice.models.CatalogItem;
 import com.jimluisf.moviecatalogservice.moviecatalogservice.models.Movie;
 import com.jimluisf.moviecatalogservice.moviecatalogservice.models.Rating;
 import com.jimluisf.moviecatalogservice.moviecatalogservice.models.UserRating;
+import com.jimluisf.moviecatalogservice.moviecatalogservice.service.MovieInfo;
+import com.jimluisf.moviecatalogservice.moviecatalogservice.service.UserRatingInfo;
+//import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 @RestController
 @RequestMapping("/catalog")
 public class MovieCatalogResource 
 {
-	@Autowired
-	private RestTemplate restTemplate;
+	private Logger logger = LoggerFactory.getLogger(MovieCatalogResource.class);
 	
 	@Autowired
 	private WebClient.Builder  webClientBuilder;
 	
+	@Autowired
+	private RestTemplate restTemplate;
+	
+	@Autowired
+	MovieInfo movieInfo;
+	
+	@Autowired
+	UserRatingInfo userRatingInfo;
+	
+//		@HystrixCommand
 		@GetMapping("/{userId}")
 		public List<CatalogItem> getCatalog(@PathVariable String userId)
 		{
-			List<CatalogItem> catalogItemList = new ArrayList<CatalogItem>();
+			logger.debug("getCatalog() - Starts - userId: "+userId);
 
-			UserRating userRating = restTemplate.getForObject("http://ratings-data-service/ratingdata/users/"+userId, UserRating.class);
+			List<CatalogItem> catalogItemList = new ArrayList<CatalogItem>();
 			
+			long startTime = System.currentTimeMillis();
+			UserRating userRating = userRatingInfo.getUserRating(userId);
 			
-			for (Rating rating2 : userRating.getUserRating()) 
+			if(userRating != null && userRating.getUserRatingList() != null && userRating.getUserRatingList().size() > 0)
 			{
-				//for each movieId call movie into service and get details
-				Movie movie = restTemplate.getForObject("http://movie-info-service/movies/"+rating2.getMovieId(), Movie.class);
+				logger.debug("getCatalog() - userRating.getUserRatingList().size(): "+userRating.getUserRatingList().size());
 				
-				//put them all together
-				catalogItemList.add(new CatalogItem(movie.getName(), "Desc", rating2.getRating()));
+				for (Rating rating : userRating.getUserRatingList()) 
+				{
+					CatalogItem catalogItem = movieInfo.getCatalogItem(rating);
+					catalogItemList.add(catalogItem);
+				}
+				
+				long endTime = System.currentTimeMillis();
+				long totalTime = endTime - startTime;
+				logger.info("getCatalog() - Total processing time in milliseconds: "+totalTime);
 			}
+			else
+				logger.info("getCatalog() - userRating.getUserRatingList() is null");
 			
 			return catalogItemList;
-
 			
 		}
+		
+		
+//		@HystrixCommand(fallbackMethod = "getFallbackCatalogItem") 
+//		public CatalogItem getCatalogItem(Rating rating) 
+//		{
+//			logger.debug("getCatalogItem() - Starts - rating.getMovieId(): "+rating.getMovieId());
+//			
+//			Movie movie = null;
+//			CatalogItem catalogItem = new CatalogItem();
+//			
+//			try 
+//			{
+//				long startTime = System.currentTimeMillis();
+//				logger.debug("getCatalogItem() - Before calling movie-info-service");
+//				//for each movieId call movie info service and get details
+//				movie = restTemplate.getForObject("http://movie-info-service/movies/"+rating.getMovieId(), Movie.class);
+//				long endTime = System.currentTimeMillis();
+//				
+//				long totalTime = endTime - startTime;
+//				logger.info("getCatalogItem() - Call duration in milliseconds: "+totalTime);
+//				
+//			} catch (Exception e) {
+//				logger.error("getCatalogItem() - An exception occurred while calling movie-info-service with movieId: "+rating.getMovieId(), e);
+//			}
+//			
+//			
+//			if(movie != null)
+//			{
+//				logger.info("getCatalogItem() - rating.getMovieId(): "+movie.getMovieId());
+//				//put them all together
+//				catalogItem = new CatalogItem(movie.getName(), "Desc", rating.getRating());
+//			}
+//			else
+//				logger.debug("getCatalogItem() - movie is null");
+//			
+//			return catalogItem;
+//		}
+//		
+//		
+//		public CatalogItem getFallbackCatalogItem(Rating rating) 
+//		{
+//			logger.info("getCatalogItem() - movie is null");
+//			return new CatalogItem("No movie found", "", rating.getRating());
+//		}
+		
+		
+//		@HystrixCommand(fallbackMethod = "getFallbackUserRating") 
+//		public UserRating getUserRating(String userId) 
+//		{
+//			logger.debug("getUserRating() - Starts - userId: "+userId);
+//			UserRating userRating = null; 
+//			
+//			try 
+//			{
+//				long startTime = System.currentTimeMillis();
+//				userRating = restTemplate.getForObject("http://ratings-data-service/ratingdata/users/"+userId, UserRating.class);
+//				long endTime = System.currentTimeMillis();
+//				
+//				long totalTime = endTime - startTime;
+//				logger.info("getUserRating() - Call duration in milliseconds: "+totalTime);
+//				
+//			} catch (Exception e) {
+//				logger.error("getUserRating() - An exception occurred while calling movie-info-service with userId: "+userId, e);
+//			}
+//			
+//			
+//			return userRating;
+//		}
+//		
+//		public UserRating getFallbackUserRating(String userId) 
+//		{
+//			logger.info("getFallbackUserRating() - Starts userId: "+userId);
+//			
+//			List<Rating> userRatingList = new ArrayList<Rating>();
+//			
+//			Rating rating = new Rating();
+//			rating.setMovieId("0");
+//			rating.setRating(0);
+//			
+//			userRatingList.add(rating);
+//			
+//			UserRating userRating = new UserRating();
+//			userRating.setUserId(userId);
+//			userRating.setUserRatingList(userRatingList);
+//
+//			return userRating;
+//		}
+
 }
 
 

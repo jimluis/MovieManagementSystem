@@ -3,7 +3,8 @@ package com.jimluisf.movieratingservice.movieratingservice.resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.assertj.core.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +17,8 @@ import com.jimluisf.movieratingservice.movieratingservice.model.UserRating;
 @RequestMapping("/ratingdata")
 public class RatingResource 
 {
-
+	private Logger logger = LoggerFactory.getLogger(RatingResource.class);
+	
 	@GetMapping("/{movieId}")
 	public Rating getRating(@PathVariable String movieId)
 	{
@@ -27,12 +29,16 @@ public class RatingResource
 	@GetMapping("/users/{userId}")
 	public UserRating getRatingList(@PathVariable String userId)
 	{
+		logger.info("getRatingList() - Starts - userId: "+userId);
+		
 		List<Rating> ratingList = new ArrayList<Rating>();
-		ratingList.add(new Rating("1234", 4));
-		ratingList.add(new Rating("5678", 3));
+		ratingList.add(new Rating("550", 4));
+		ratingList.add(new Rating("551", 3));
 		
 		UserRating userRating = new UserRating();
-		userRating.setUserRating(ratingList);
+		userRating.setUserRatingList(ratingList);
+		
+		logger.info("getRatingList() - Ends - ratingList: "+ratingList.size());
 		return userRating;
 	}
 }

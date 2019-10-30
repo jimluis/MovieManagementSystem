@@ -7,6 +7,8 @@ public class CatalogItem
 	private int ratings;
 	
 	
+	public CatalogItem() {
+	}
 	
 	public CatalogItem(String title, String desc, int ratings) {
 		super();
