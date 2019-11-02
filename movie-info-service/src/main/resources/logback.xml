@@ -33,13 +33,13 @@
     </appender>
      
     <!-- LOG everything at INFO level -->
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="RollingFile" />
         <appender-ref ref="Console" />
-    </root>
+    </root> 
  
     <!-- LOG "com.baeldung*" at TRACE level -->
-    <logger name="com.baeldung" level="trace" additivity="false">
+    <logger name="com.jimluisf.movieinfoservice" level="debug" additivity="false">
         <appender-ref ref="RollingFile" />
         <appender-ref ref="Console" />
     </logger>
